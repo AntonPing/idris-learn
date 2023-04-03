@@ -1,0 +1,10 @@
+[custom.all.idris-learn]
+type = "local"
+path = "."
+ipkg = "idris-learn.ipkg"
+test = "test/test.ipkg"
+
+[custom.all.idris-learn-test]
+type = "local"
+path = "test"
+ipkg = "test.ipkg"
