@@ -5,17 +5,17 @@ import Control.Relation
 import Control.Order
 
 mutual
-    data SortedList : {rel : Rel ty} -> (ty : Type) -> Type where
-        Nil : SortedList ty
-        (::) : -- {rel : Rel ty} -> 
-            (x : ty) -> (xs : SortedList {rel} ty)
-            -> {auto prf : LessEqual {rel} x (head xs)}
-            -> SortedList {rel} ty
+    data SortedList : (ty : Type) -> (rel : Rel ty) ->  Type where
+        Nil : SortedList ty rel
+        (::) : (x : ty) ->
+            (xs : SortedList ty rel) ->
+            {auto prf : LessEqual x rel (head xs)} ->
+            SortedList ty rel
     
-    data LessEqual : {rel : Rel ty} -> ty -> Maybe ty -> Type where
-        LENothing : LessEqual ty Nothing
-        LEJust : {rel : Rel ty} -> 
-            rel x y -> LessEqual x {rel} (Just y)
+    data LessEqual : ty -> (rel : Rel ty) -> Maybe ty -> Type where
+        LENothing : LessEqual ty rel Nothing
+        LEJust : {rel : Rel ty} -> rel x y ->
+            LessEqual x rel (Just y)
     
     head : SortedList {rel} ty -> Maybe ty
     head [] = Nothing
@@ -23,30 +23,28 @@ mutual
 
 mutual
     addToList : {rel : Rel ty} -> StronglyConnex ty rel =>
-        (x : ty) -> SortedList {rel} ty -> SortedList {rel} ty
+        (x : ty) -> SortedList ty rel -> SortedList ty rel
     addToList x [] = [x]{prf = LENothing}
     addToList x ((y :: ys){prf=prf0}) = 
         case order x y of
             Left prf => (x :: y :: ys) {prf=LEJust prf}
-            Right prf => (y :: addToList x ys) {prf = lemma1 prf prf0}
+            Right prf => (y :: addToList x ys) {prf = lemma1 y x ys prf prf0}
 
     lemma1 : {rel : Rel ty} -> StronglyConnex ty rel =>
-        {x : ty} -> {y : ty} -> {ys : SortedList {rel} ty}
+        (x : ty) -> (y : ty) -> (ys : SortedList ty rel)
         -> (rel x y)
-        -> LessEqual {rel} x (head ys)
-        -> LessEqual {rel} x (head (addToList y ys))
-    lemma1 @{sc} prf1 prf2 with (ys)
-        _ | [] = LEJust prf1
-        _ | (y'::ys') with (order @{sc} y y') proof odr -- why can't just (order y y')?
-            _ | Left prf3 = LEJust prf1
-            _ | Right prf4 = prf2
+        -> LessEqual x rel (head ys)
+        -> LessEqual x rel (head (addToList y ys))
+    lemma1 x y [] prf1 prf2 = LEJust prf1
+    lemma1 x y (y'::ys') prf1 prf2 with (order {rel} y y') proof odr
+        _ | Left _ = LEJust prf1
+        _ | Right _ = prf2
     
     -- we don't need lemma2 anymore.
     lemma2 : {rel : Rel ty} -> StronglyConnex ty rel =>
-        {x: ty} -> {ys : SortedList {rel} ty}
+        (x: ty) -> (ys : SortedList {rel} ty)
         -> Either (head (addToList x ys) = (head ys)) (head (addToList x ys) = Just x)
-    lemma2 @{sc} {x} with (ys)
-        _ | [] = Right Refl
-        _ | (y::_) with (order @{sc} x y) -- why can't just (order x y)?
-            _ | Left prf = Right Refl
-            _ | Right prf = Left Refl
+    lemma2 x [] = Right Refl
+    lemma2 x (y::_) with (order {rel} x y)
+        _ | Left prf = Right Refl
+        _ | Right prf = Left Refl
