@@ -4,22 +4,23 @@ import Data.List.Quantifiers
 import Control.Relation
 import Control.Order
 
-mutual
-    data SortedList : (ty : Type) -> (rel : Rel ty) ->  Type where
-        Nil : SortedList ty rel
-        (::) : (x : ty) ->
-            (xs : SortedList ty rel) ->
-            {auto prf : LessEqual x rel (head xs)} ->
-            SortedList ty rel
-    
-    data LessEqual : ty -> (rel : Rel ty) -> Maybe ty -> Type where
-        LENothing : LessEqual ty rel Nothing
-        LEJust : {rel : Rel ty} -> rel x y ->
-            LessEqual x rel (Just y)
-    
-    head : SortedList {rel} ty -> Maybe ty
-    head [] = Nothing
-    head (x::xs) = Just x
+data LessEqual : ty -> (rel : Rel ty) -> Maybe ty -> Type where
+    LENothing : LessEqual ty rel Nothing
+    LEJust : {rel : Rel ty} -> rel x y ->
+        LessEqual x rel (Just y)
+
+data SortedList : (ty : Type) -> (rel : Rel ty) ->  Type
+head : SortedList ty rel -> Maybe ty
+
+data SortedList : (ty : Type) -> (rel : Rel ty) ->  Type where
+    Nil : SortedList ty rel
+    (::) : (x : ty) ->
+        (xs : SortedList ty rel) ->
+        {auto 0 prf : LessEqual x rel (head xs)} ->
+        SortedList ty rel
+
+head [] = Nothing
+head (x::xs) = Just x
 
 mutual
     addToList : {rel : Rel ty} -> StronglyConnex ty rel =>
