@@ -33,10 +33,10 @@ foldLHS : (f : String) -> (n : Nat) -> TTImp
 foldLHS f 0 = var f
 foldLHS f (S n) = foldLHS f n `ap` bind ("x" ++ show (S n))
 
-foldRHS : Nat -> TTImp
+foldRHS : (n : Nat) -> (0 _: LTE 1 n) => TTImp
 foldRHS 0 = var "???" -- never
 foldRHS 1 = var "x1"
-foldRHS (S n) = `(Data.Bool.Xor.xor) `ap` (var $ "x" ++ show (S n)) `ap` foldRHS n
+foldRHS (S n@(S _)) = `(Data.Bool.Xor.xor) `ap` (var $ "x" ++ show (S n)) `ap` foldRHS n
 
 mkXor : String -> (n : Nat) -> LTE 1 n => Elab ()
 mkXor f n =  declare $
